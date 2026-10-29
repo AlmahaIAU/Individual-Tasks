@@ -121,7 +121,14 @@ fun CourseDetailRoute(code: String, onBackClick: () -> Unit) {
     val context = LocalContext.current // used in Task 4
     CourseDetailScreen(
         uiState = CourseDetailUiState(code = code),
-        onShareClick = { /* Task 4 */ },
+        // Task 4 - share sheet. A chooser always has at least the system sheet, so no try/catch.
+        onShareClick = {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_TEXT, "I'm taking $code this semester!")
+                type = "text/plain"
+            }
+            context.startActivity(Intent.createChooser(send, "Share via"))
+        },
         onBackClick = onBackClick
     )
 }
