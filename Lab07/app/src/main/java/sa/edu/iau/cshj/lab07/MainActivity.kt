@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import sa.edu.iau.cshj.lab07.ui.CourseRatingRoute
 import sa.edu.iau.cshj.lab07.ui.theme.Lab07CourseFeedbackTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +17,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Lab07CourseFeedbackTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CourseRatingRoute(code = "CSC 402", modifier = Modifier.padding(innerPadding))
+                    CourseApp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
