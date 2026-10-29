@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import sa.edu.iau.cshj.lab05.ui.HomeRoute
+import sa.edu.iau.cshj.lab05.navigation.CourseApp
 import sa.edu.iau.cshj.lab05.ui.theme.Lab05CoursesTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Lab05CoursesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeRoute(onCoursesClick = {}) // the third button does nothing yet
+                    CourseApp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
