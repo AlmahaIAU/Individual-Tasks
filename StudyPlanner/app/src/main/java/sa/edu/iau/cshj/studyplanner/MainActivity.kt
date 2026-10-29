@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import sa.edu.iau.cshj.studyplanner.ui.PlannerHomeRoute
+import sa.edu.iau.cshj.studyplanner.navigation.StudyPlannerApp
 import sa.edu.iau.cshj.studyplanner.ui.theme.StudyPlannerTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             StudyPlannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PlannerHomeRoute(modifier = Modifier.padding(innerPadding))
+                    StudyPlannerApp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
