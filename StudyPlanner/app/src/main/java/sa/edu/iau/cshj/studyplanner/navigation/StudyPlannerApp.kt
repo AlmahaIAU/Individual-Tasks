@@ -9,19 +9,20 @@ import androidx.navigation.toRoute
 import sa.edu.iau.cshj.studyplanner.ui.PlannerHomeRoute
 import sa.edu.iau.cshj.studyplanner.ui.TaskDetailRoute
 
-/** P2.7 - the only place that knows the NavController. Screens never receive it. */
+/** The only place that knows the NavController. Screens never receive it. */
 @Composable
 fun StudyPlannerApp(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = PlannerHome, modifier = modifier) {
         composable<PlannerHome> {
             PlannerHomeRoute(
-                onTaskClick = { title -> navController.navigate(TaskDetail(title)) }
+                onTaskClick = { task -> navController.navigate(TaskDetail(task.id, task.title)) }
             )
         }
         composable<TaskDetail> { backStackEntry ->
             val detail: TaskDetail = backStackEntry.toRoute()
             TaskDetailRoute(
+                taskId = detail.taskId,
                 title = detail.title,
                 onBackClick = { navController.popBackStack() }
             )

@@ -2,15 +2,14 @@ package sa.edu.iau.cshj.studyplanner.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,67 +22,76 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import sa.edu.iau.cshj.studyplanner.model.StudyTask
 import sa.edu.iau.cshj.studyplanner.ui.theme.StudyPlannerTheme
 
-/** The home screen's state. One immutable class, every field has a default. */
+/**
+ * The home screen's state. The separate total/done counters from Part 1 are gone:
+ * progress is now computed from the list - one source of truth.
+ */
 data class PlannerUiState(
     val greeting: String = "Hello!",
-    val totalTasks: Int = 0,
-    val doneTasks: Int = 0,
-    val tasks: List<String> = emptyList(),
-    val newTaskTitle: String = "" // Part 3: the text field's value is hoisted into the state too
-)
+    val tasks: List<StudyTask> = emptyList(),
+    val newTaskTitle: String = ""
+) {
+    val totalTasks: Int get() = tasks.size
+    val doneTasks: Int get() = tasks.count { it.isDone }
+}
 
-/**
- * Part 3 - tells rememberSaveable how to put PlannerUiState into the saved-state Bundle
- * and rebuild it after rotation (a data class cannot go into a Bundle on its own).
- */
+/** Saves PlannerUiState (including every task) into the saved-state Bundle for rotation. */
 val PlannerUiStateSaver = listSaver<PlannerUiState, Any>(
-    save = { arrayListOf(it.greeting, it.totalTasks, it.doneTasks, ArrayList(it.tasks), it.newTaskTitle) },
-    restore = {
+    save = { state ->
+        arrayListOf(
+            state.greeting,
+            state.newTaskTitle,
+            ArrayList(state.tasks.map { arrayListOf(it.id, it.title, it.course, it.isDone) })
+        )
+    },
+    restore = { saved ->
         @Suppress("UNCHECKED_CAST")
+        val rows = saved[2] as List<List<Any>>
         PlannerUiState(
-            greeting = it[0] as String,
-            totalTasks = it[1] as Int,
-            doneTasks = it[2] as Int,
-            tasks = it[3] as List<String>,
-            newTaskTitle = it[4] as String
+            greeting = saved[0] as String,
+            newTaskTitle = saved[1] as String,
+            tasks = rows.map { StudyTask(it[0] as Int, it[1] as String, it[2] as String, it[3] as Boolean) }
         )
     }
 )
 
-/**
- * Stateless: everything it shows arrives in uiState, every action leaves as a lambda.
- * Even the text field holds no state of its own - its value comes from uiState.newTaskTitle.
- */
+val sampleTasks = listOf(
+    StudyTask(1, "Lab 7 exercises", "CSC 402"),
+    StudyTask(2, "ER diagram for the library", "CSC 311", isDone = true),
+    StudyTask(3, "Revise process scheduling", "CSC 340"),
+    StudyTask(4, "Graph theory problem set", "MATH 202", isDone = true),
+    StudyTask(5, "Draft the technical report", "ENG 214"),
+    StudyTask(6, "Semester App - Part 4", "CSC 402")
+)
+
+/** Stateless home screen: the list is a LazyColumn of TaskItem rows (no RecyclerView, no Adapter). */
 @Composable
 fun PlannerHomeScreen(
     uiState: PlannerUiState,
-    onFinishTaskClick: () -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (Int) -> Unit,
+    onDoneChange: (Int, Boolean) -> Unit,
     onNewTaskTitleChange: (String) -> Unit,
     onAddTaskClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(uiState.greeting, style = MaterialTheme.typography.headlineMedium)
+    Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        Text(
+            uiState.greeting,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 16.dp)
+        )
         Text(
             "${uiState.doneTasks} of ${uiState.totalTasks} done",
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
         )
-        Button(
-            onClick = onFinishTaskClick,
-            enabled = uiState.doneTasks < uiState.totalTasks
+        Row(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Finish a task")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = uiState.newTaskTitle,
                 onValueChange = onNewTaskTitleChange,
@@ -97,48 +105,39 @@ fun PlannerHomeScreen(
                 modifier = Modifier.padding(start = 8.dp)
             ) { Text("Add") }
         }
-        Text("My study tasks", style = MaterialTheme.typography.titleSmall)
-        uiState.tasks.forEach { title ->
-            OutlinedButton(onClick = { onTaskClick(title) }, modifier = Modifier.fillMaxWidth()) {
-                Text(title)
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(uiState.tasks, key = { it.id }) { task ->
+                TaskItem(task = task, onTaskClick = onTaskClick, onDoneChange = onDoneChange)
             }
         }
     }
 }
 
-/**
- * The Route owns the state. rememberSaveable (instead of remember) keeps it
- * when the Activity is recreated on rotation.
- */
+/** The Route owns all the state; a tick produces a NEW list with map + copy. */
 @Composable
-fun PlannerHomeRoute(onTaskClick: (String) -> Unit, modifier: Modifier = Modifier) {
+fun PlannerHomeRoute(onTaskClick: (StudyTask) -> Unit, modifier: Modifier = Modifier) {
     var uiState by rememberSaveable(stateSaver = PlannerUiStateSaver) {
-        mutableStateOf(
-            PlannerUiState(
-                greeting = "Hello, Almaha!",
-                totalTasks = 5,
-                doneTasks = 0,
-                tasks = listOf(
-                    "Lab 5 report",
-                    "Revise Kotlin null safety",
-                    "CSC 311 ER diagram",
-                    "Read Lecture 6 slides",
-                    "Practise rememberSaveable"
-                )
-            )
-        )
+        mutableStateOf(PlannerUiState(greeting = "Hello, Almaha!", tasks = sampleTasks))
     }
     PlannerHomeScreen(
         uiState = uiState,
-        onFinishTaskClick = {
-            uiState = uiState.copy(doneTasks = uiState.doneTasks + 1)
+        onTaskClick = { id ->
+            uiState.tasks.firstOrNull { it.id == id }?.let(onTaskClick)
         },
-        onTaskClick = onTaskClick,
+        onDoneChange = { id, done ->
+            uiState = uiState.copy(
+                tasks = uiState.tasks.map { if (it.id == id) it.copy(isDone = done) else it }
+            )
+        },
         onNewTaskTitleChange = { text -> uiState = uiState.copy(newTaskTitle = text) },
         onAddTaskClick = {
+            val nextId = (uiState.tasks.maxOfOrNull { it.id } ?: 0) + 1
             uiState = uiState.copy(
-                tasks = uiState.tasks + uiState.newTaskTitle.trim(),
-                totalTasks = uiState.totalTasks + 1,
+                tasks = uiState.tasks + StudyTask(nextId, uiState.newTaskTitle.trim(), "CSC 402"),
                 newTaskTitle = ""
             )
         },
@@ -146,31 +145,17 @@ fun PlannerHomeRoute(onTaskClick: (String) -> Unit, modifier: Modifier = Modifie
     )
 }
 
-@Preview(showBackground = true, name = "Nothing done yet")
+// P4.6 - preview 3: the home screen with five tasks
+@Preview(showBackground = true, name = "Home - five tasks")
 @Composable
-private fun PlannerHomeNothingDonePreview() {
+private fun PlannerHomeFiveTasksPreview() {
     StudyPlannerTheme {
         PlannerHomeScreen(
-            uiState = PlannerUiState(
-                "Hello, Almaha!", totalTasks = 3, doneTasks = 0,
-                tasks = listOf("Lab 5 report", "CSC 311 ER diagram", "Read Lecture 6")
-            ),
-            onFinishTaskClick = {}, onTaskClick = {}, onNewTaskTitleChange = {}, onAddTaskClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Everything done, typing a new task")
-@Composable
-private fun PlannerHomeAllDonePreview() {
-    StudyPlannerTheme {
-        PlannerHomeScreen(
-            uiState = PlannerUiState(
-                "Hello, Almaha!", totalTasks = 3, doneTasks = 3,
-                tasks = listOf("Lab 5 report", "CSC 311 ER diagram", "Read Lecture 6"),
-                newTaskTitle = "Lab 6 exercises"
-            ),
-            onFinishTaskClick = {}, onTaskClick = {}, onNewTaskTitleChange = {}, onAddTaskClick = {}
+            uiState = PlannerUiState("Hello, Almaha!", tasks = sampleTasks.take(5)),
+            onTaskClick = {},
+            onDoneChange = { _, _ -> },
+            onNewTaskTitleChange = {},
+            onAddTaskClick = {}
         )
     }
 }

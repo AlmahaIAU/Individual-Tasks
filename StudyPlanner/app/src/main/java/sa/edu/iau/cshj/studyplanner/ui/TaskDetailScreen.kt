@@ -18,6 +18,7 @@ import sa.edu.iau.cshj.studyplanner.ui.theme.StudyPlannerTheme
 
 /** P2.5 - what the detail screen shows. */
 data class TaskDetailUiState(
+    val taskId: Int = 0,
     val title: String = ""
 )
 
@@ -33,7 +34,7 @@ fun TaskDetailScreen(
         modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Study task", style = MaterialTheme.typography.labelLarge)
+        Text("Study task #${uiState.taskId}", style = MaterialTheme.typography.labelLarge)
         Text(uiState.title, style = MaterialTheme.typography.headlineMedium)
         Button(onClick = onShareClick) { Text("Share") }
         OutlinedButton(onClick = onBackClick) { Text("Back") }
@@ -42,10 +43,10 @@ fun TaskDetailScreen(
 
 /** P2.6 - the Route builds the share Intent inside the event lambda. */
 @Composable
-fun TaskDetailRoute(title: String, onBackClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskDetailRoute(taskId: Int, title: String, onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     TaskDetailScreen(
-        uiState = TaskDetailUiState(title = title),
+        uiState = TaskDetailUiState(taskId = taskId, title = title),
         onShareClick = {
             val send = Intent(Intent.ACTION_SEND).apply {
                 putExtra(Intent.EXTRA_TEXT, "Today I'm studying: $title")
@@ -58,18 +59,18 @@ fun TaskDetailRoute(title: String, onBackClick: () -> Unit, modifier: Modifier =
     )
 }
 
-@Preview(showBackground = true, name = "Detail - Lab 5 report")
+@Preview(showBackground = true, name = "Detail - Lab 7 exercises")
 @Composable
 private fun TaskDetailPreview() {
     StudyPlannerTheme {
-        TaskDetailScreen(TaskDetailUiState("Lab 5 report"), onShareClick = {}, onBackClick = {})
+        TaskDetailScreen(TaskDetailUiState(1, "Lab 7 exercises"), onShareClick = {}, onBackClick = {})
     }
 }
 
-@Preview(showBackground = true, name = "Detail - CSC 311 ER diagram")
+@Preview(showBackground = true, name = "Detail - ER diagram")
 @Composable
 private fun TaskDetailSecondPreview() {
     StudyPlannerTheme {
-        TaskDetailScreen(TaskDetailUiState("CSC 311 ER diagram"), onShareClick = {}, onBackClick = {})
+        TaskDetailScreen(TaskDetailUiState(2, "ER diagram for the library"), onShareClick = {}, onBackClick = {})
     }
 }
